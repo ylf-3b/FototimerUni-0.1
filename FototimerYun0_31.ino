@@ -194,12 +194,14 @@ void setup()
 {
   // variable to setup custom display characters
   uint8_t newLCDchar[8];
+  
   // first load config and settings
   loadConfig();
   loadSettings();
   // set analog Voltage for contrast
   pinMode(contrastPin, OUTPUT);
   analogWrite(contrastPin, contrastValue);
+  
   // set up the LCD's number of columns and rows: 
   lcd.begin(16,2);
   // create own charaters
