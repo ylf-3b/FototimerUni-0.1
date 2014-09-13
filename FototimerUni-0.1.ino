@@ -1,5 +1,9 @@
-/* ^^^ above bugfix for preprozessor ^^^
-****************************************/
+#define nop() __asm volatile ("nop")
+#if 1
+nop();
+#endif
+/* ^^^ above bugfix for preprozessor, don't relay on it, it doesn#t work propably ^^^
+*******************************************************************************************/
 
 // enable C++ style printing. C++ syntax would be:
 //     cout << "Variable alpha is " << alpha << endl;
@@ -10,9 +14,8 @@
 template<class T> inline Print &operator <<(Print &obj, T arg) { obj.print(arg); return obj; }
 
 /*********************************************************************************************
-FotoTimerYun 0.3
-based on FototimerNG0.9
-and FotoTimerYun0.2
+FotoTimerUni 0.1
+based on FotoTimerYun0.31
 
 - rotary encoder increment or decrement values
 - timer controlled by hardware timer interrupt
@@ -32,15 +35,15 @@ and FotoTimerYun0.2
 ** IMPORTANT! FIRST DEFINE HARDWARE PLATFORM! **
 ***********************************************/
 //#define HARDWARE_UNO  // uncomment this, if a Arduino UNO is used
-//#define HARDWARE_YUN // uncomment this, if a Arduino YUN is used
-#define HARDWARE_MEGA // // uncomment this, if a Arduino Mega ADK is used
+#define HARDWARE_YUN // uncomment this, if a Arduino YUN is used
+//#define HARDWARE_MEGA // // uncomment this, if a Arduino Mega ADK is used
 
 /* *********************************************
 ** IMPORTANT! SECOND DEFINE ISO REMOTE TYPE!  **
 ***********************************************/
 //#define ISOREMOTE_SERIAL  // uncomment this, if a RaspberryPi as slave is used
-//#define ISOREMOTE_YUN  // uncomment this, if a Arduino YUN is used
-#define ISOREMOTE_USBHOST  // uncomment this, if a Arduino Meaga ADK is used
+#define ISOREMOTE_YUN  // uncomment this, if a Arduino YUN is used
+//#define ISOREMOTE_USBHOST  // uncomment this, if a Arduino Meaga ADK is used
 
 // set pin numbers and other constants:
 const int batteryPin = 1;  // the number of the analog input used for the battery watching
@@ -72,21 +75,21 @@ const bool SKIP_INTRO = true;
 #include <analogKeyboard.h>
 #include <FotoTimerSymbols.h>
 #include <exposurevary.h>
-
+#include <PrintSubFunctions.h>
 
 #ifdef ISOREMOTE_YUN
   #include <yunremote.h>
 #endif
 
 #ifdef ISOREMOTE_USBHOST
-  #include <megaremote.h>
+  //#include <megaremote.h>
 #endif
 
 #ifdef ISOREMOTE_SERIAL
-  #include <isoremote.h>
+  //#include <isoremote.h>
 #endif
 
-#include <PrintSubFunctions.h>
+
 
 
 
@@ -259,6 +262,7 @@ void setup()
   // after startup (7 seconds time since power on ...)
   // clear the display  
   lcd.clear();
+  /*
   // print info message on display
   lcd.setCursor(0,0);
   lcd.print("wait for com ...");
@@ -267,8 +271,9 @@ void setup()
   // clear and prepare temp variables used in loop
   temp_int = 16;
   temp_input = 0;
-  // begin to establish communication with Linux ISO client
+  // begin to establish communication with Linux ISO client */
   isoremotebegin();
+  /*
   // loop until sucess
   while(temp_input == 0 && temp_int > 0)
     {
@@ -280,7 +285,7 @@ void setup()
     temp_int--;
     lcd.print("*");
     delay(500);
-    }
+    }*/
   // clear temporaly variables
   temp_input = 0;
   temp_int = 0;
@@ -305,6 +310,12 @@ void loop()
     {
         loopactioncounter = 0;
     }
+    // check periodically for ISO speed settings message
+    if (loopactioncounter == 6)
+      {
+      // no check for success
+      getanswer(&isolevel);
+      }    
     // check if new cycle beginns
     // calculate the parameters
     if (timerstate < 0)
