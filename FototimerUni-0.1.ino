@@ -2,7 +2,7 @@
 #if 1
 nop();
 #endif
-/* ^^^ above bugfix for preprozessor, don't relay on it, it doesn#t work propably ^^^
+/* ^^^ above bugfix for preprozessor, don't relay on it, it doesn't work propably ^^^
 *******************************************************************************************/
 
 // enable C++ style printing. C++ syntax would be:
@@ -260,32 +260,10 @@ void setup()
       if( !SKIP_INTRO ) delay(1000);
     } while (temp_int > 0);
   // after startup (7 seconds time since power on ...)
+  // start ISO speed remote functionality
+  isoremotebegin();
   // clear the display  
   lcd.clear();
-  /*
-  // print info message on display
-  lcd.setCursor(0,0);
-  lcd.print("wait for com ...");
-  // set cursor to second display line
-  lcd.setCursor(0,1);
-  // clear and prepare temp variables used in loop
-  temp_int = 16;
-  temp_input = 0;
-  // begin to establish communication with Linux ISO client */
-  isoremotebegin();
-  /*
-  // loop until sucess
-  while(temp_input == 0 && temp_int > 0)
-    {
-    temp_input = getanswer(&isolevel);
-    if ( isolevel == 0)
-      {
-      temp_input = 0;
-      }
-    temp_int--;
-    lcd.print("*");
-    delay(500);
-    }*/
   // clear temporaly variables
   temp_input = 0;
   temp_int = 0;
@@ -703,6 +681,74 @@ void settings1Srceen()
     {
     iso_settings_automatic();
     }
+  lcd.setCursor(1,1);
+  lcd.print("Et");
+  lcd.write(uint8_t (cursor(settings1state,1)));
+  // alternativ display for better human reading
+  printtime(exposuretime);
+  lcd.setCursor(9,1);
+  lcd.print("|G");
+  lcd.write(uint8_t (cursor(settings1state,2)));
+  lcd.print(picgoal);
+  lcd.print("  ");
+  // key handling
+  if (keycode < KEY_CODE_NEUTRAL || encoderValue != 0)
+    {
+    settings1state = settings1state + keyValueH;
+    if (settings1state > 2)
+      {
+      settings1state =   0;
+      ++menuescreen;
+      }
+    if (settings1state < 0)
+      {
+      settings1state =   0;
+      --menuescreen;
+      }
+    switch(settings1state)
+      {
+      // case 0 was handled in iso_settings_*** function before
+      case 1:
+        exposuretime = exposurevary(exposuretime,keyValueV);
+        exposuretime = exposurevary(exposuretime,encoderValue);
+        // check lower limit
+        if (exposuretime < 0.05)
+          {
+          exposuretime = 0.05;
+          }
+        // check upper limit
+        if (exposuretime > expomax)
+          {
+          exposuretime = expomax;
+          }
+        // pause timer
+        if (keycode == KEY_CODE_CANCEL)
+          {
+          timerpause = true;
+          }  
+        // continue timer
+        if (keycode == KEY_CODE_OK)
+          {
+          timerpause = false;
+          }
+      break;
+      case 2:
+        picgoal = picgoal + keyValueV * 10;
+        picgoal = picgoal + encoderValue * 10;
+        if (picgoal > 1000)
+          {
+          picgoal = 1000;
+          }
+        if (picgoal < 0)
+          {
+          picgoal = 0;
+          }
+      break;
+      }
+      keycode = KEY_CODE_NEUTRAL;
+      encoderValue = 0;
+    }    
+
   } // end settings screen 1
 
 /*******************************
@@ -1349,29 +1395,9 @@ void iso_settings_manually(void)
       lcd.print("           ");
       }
     }
-  lcd.setCursor(1,1);
-  lcd.print("Et");
-  lcd.write(uint8_t (cursor(settings1state,1)));
-  // alternativ display for better human reading
-  printtime(exposuretime);
-  lcd.setCursor(9,1);
-  lcd.print("|G");
-  lcd.write(uint8_t (cursor(settings1state,2)));
-  lcd.print(picgoal);
-  lcd.print("  ");
+
   if (keycode < KEY_CODE_NEUTRAL || encoderValue != 0)
     {
-    settings1state = settings1state + keyValueH;
-    if (settings1state > 2)
-      {
-      settings1state =   0;
-      ++menuescreen;
-      }
-    if (settings1state < 0)
-      {
-      settings1state =   0;
-      --menuescreen;
-      }
     switch(settings1state)
       {
       case 0:
@@ -1423,45 +1449,8 @@ void iso_settings_manually(void)
             }
           }  
       break;
-      case 1:
-        exposuretime = exposurevary(exposuretime,keyValueV);
-        exposuretime = exposurevary(exposuretime,encoderValue);
-        // check lower limit
-        if (exposuretime < 0.05)
-          {
-          exposuretime = 0.05;
-          }
-        // check upper limit
-        if (exposuretime > expomax)
-          {
-          exposuretime = expomax;
-          }
-        // pause timer
-        if (keycode == KEY_CODE_CANCEL)
-          {
-          timerpause = true;
-          }  
-        // continue timer
-        if (keycode == KEY_CODE_OK)
-          {
-          timerpause = false;
-          }
-      break;
-      case 2:
-        picgoal = picgoal + keyValueV * 10;
-        picgoal = picgoal + encoderValue * 10;
-        if (picgoal > 1000)
-          {
-          picgoal = 1000;
-          }
-        if (picgoal < 0)
-          {
-          picgoal = 0;
-          }
-      break;
+      // case 1 and 2 will be handled later
       }
-      keycode = KEY_CODE_NEUTRAL;
-      encoderValue = 0;
     }    
   }
 // ISO settings screen in automatic mode
@@ -1475,29 +1464,8 @@ void iso_settings_automatic(void)
   lcd.print("|ISO");
   lcd.print(isolevel);
   lcd.print("  ");
-  lcd.setCursor(1,1);
-  lcd.print("Et");
-  lcd.write(uint8_t (cursor(settings1state,1)));
-  // alternativ display for better human reading
-  printtime(exposuretime);
-  lcd.setCursor(9,1);
-  lcd.print("|G");
-  lcd.write(uint8_t (cursor(settings1state,2)));
-  lcd.print(picgoal);
-  lcd.print("  ");
   if (keycode < KEY_CODE_NEUTRAL || encoderValue != 0)
     {
-    settings1state = settings1state + keyValueH;
-    if (settings1state > 2)
-      {
-      settings1state =   0;
-      ++menuescreen;
-      }
-    if (settings1state < 0)
-      {
-      settings1state =   0;
-      --menuescreen;
-      }
     switch(settings1state)
       {
       case 0:
@@ -1519,35 +1487,8 @@ void iso_settings_automatic(void)
           isolevel = 0;
           }
       break;
-      case 1:
-        exposuretime = exposurevary(exposuretime,keyValueV);
-        exposuretime = exposurevary(exposuretime,encoderValue);
-        // check lower limit
-        if (exposuretime < 0.05)
-          {
-          exposuretime = 0.05;
-          }
-        // check upper limit
-        if (exposuretime > expomax)
-          {
-          exposuretime = expomax;
-          }
-      break;
-      case 2:
-        picgoal = picgoal + keyValueV * 10;
-        picgoal = picgoal + encoderValue * 10;
-        if (picgoal > 1000)
-          {
-          picgoal = 1000;
-          }
-        if (picgoal < 0)
-          {
-          picgoal = 0;
-          }
-      break;
+      // case 1 and 2 will be handled later
       }
-      keycode = KEY_CODE_NEUTRAL;
-      encoderValue = 0;
     }    
   }
 // switch ISO automatic up
