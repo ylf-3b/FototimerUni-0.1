@@ -1203,34 +1203,69 @@ void settings2Srceen()
       break;
       case 5:
         lcd.setCursor(0,0);
-        lcd.print("\x7F");
-        lcd.print("auto ISO:");
-        if (isolevel == 0)
+        lcd.print("\x7F chg. ISOspeed\x7E");
+        if (keyValueV > 0)
           {
-          lcd.print("off");
+          isolevel = isolevel * 2;
+          if (isolevel == 0)
+            {
+            isolevel = isomin;
+            }
+          if (isolevel > isomax)
+            {
+            isolevel = isomax;
+            isolvold = isolevel;
+            }
+          }
+        if (keyValueV < 0)
+          {
+          isolevel = isolevel / 2;
+          if (isolevel == 0)
+            {
+            isolevel = isomax;
+            }
+          if (isolevel < isomin)
+            {
+            isolevel = isomin;
+            isolvold = isolevel;
+            }
+          }       
+        lcd.setCursor(1,1);
+        lcd.print("current:");
+        if (isolevel == 0 || isolvold != 0)
+          {
+          lcd.print("off  ");
           }
         else
           {
           lcd.print(isolevel);
+          lcd.print("   ");
           }
-        lcd.print("  \x7E ");  
-        lcd.setCursor(1,1);
-        lcd.print("on/off --> OK");
         if (keycode == KEY_CODE_OK)
           {
-          if (isolevel == 0)
+          if (isolevel == 0 && isolvold > 0)
             {
             getisolevel();
             lcd.setCursor(1,1);
-            lcd.print("read ISOspeed");
+            lcd.print("read ISOspeed ");
             delay(1000);
             getanswer(&isolevel);
+            isolvold = 0;
             }
-          else
+          else if (isolevel == isolvold)
             {
             isolevel = 0;
             delay(500);
             }
+          else
+            {
+            setisolevel(isolevel);
+            lcd.setCursor(1,1);
+            lcd.print(" set ISOspeed ");
+            delay(1000);
+            getanswer(&isolevel);
+            }
+          keycode = KEY_CODE_NEUTRAL;
           }        
       break;
       case 6:
